@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug FluencyChecker",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/testing_script.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Poetry Run Debug",
+            "type": "python",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/.venv/bin/python",
+            "runtimeArgs": ["-m", "poetry", "run", "python", "${file}"],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        }
+    ]
+}

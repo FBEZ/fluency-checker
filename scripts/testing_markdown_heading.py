@@ -1,5 +1,5 @@
 from pathlib import Path
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from fluency_checker.splitter import StringMarkdownHeaderTextSplitter
 from langchain_openai import ChatOpenAI 
 from fluency_checker.fluency_checker import FluencyChecker
 import os
@@ -11,17 +11,21 @@ load_dotenv()
 
 
 llm = ChatOpenAI(
-    model="meta-llama/llama-3.3-70b-instruct:free",  # Free tier model
+    model="anthropic/claude-sonnet-4.5",  # Free tier model
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
     temperature=0.1
 )
 
 # 2. Initialize a Markdown splitter
-splitter = RecursiveCharacterTextSplitter(
-    chunk_size=100,
-    chunk_overlap=50,
+
+
+# Usage
+splitter = StringMarkdownHeaderTextSplitter(
+    headers_to_split_on=[("#", "#"), ("##", "##"),("###", "###")],
+    strip_headers=True
 )
+
 
 # 3. Initialize the fluency checker
 checker = FluencyChecker(llm=llm, markdown_splitter=splitter)

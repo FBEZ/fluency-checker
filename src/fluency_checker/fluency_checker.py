@@ -1,7 +1,9 @@
 from typing import List, Union
 from langchain_core.language_models import BaseLanguageModel
 from .splitter import MarkdownSplitter
+from .prompts.fluency_prompt_pydantic import fluency_prompt
 from .models import FluencySegment
+import json, re
 
 class FluencyChecker:
     """Checks fluency of markdown text using an LLM."""
@@ -48,15 +50,39 @@ class FluencyChecker:
             current_line += num_lines
 
         return analyzed_segments
+    
+    def _sanitize_llm_json_output(self,text: str) -> str:
+        # Remove ```json ... ``` fences
+        fenced = re.sub(r"^```[\w]*\n", "", text.strip())
+        fenced = re.sub(r"\n```$", "", fenced)
+        return fenced.strip()
 
     def _analyze_segment(self, text: str) -> dict:
         """
-        Placeholder method to call LLM for fluency analysis.
-        Returns a dict with keys: grammatical, natural, suggestions.
+        Use the LLM to evaluate fluency of a text segment.
+        Returns a dict: { grammatical: bool, natural: bool, suggestions: list[str] }
         """
-        # TODO: implement actual LLM logic
+        prompt_str = fluency_prompt.format(text=text)
+        response = self.llm.invoke(prompt_str)
+
+        # `response` may contain:
+        #   - `response.content`     (Chat model)
+        #   - direct string          (Completion model)
+        content = getattr(response, "content", response)
+        content = self._sanitize_llm_json_output(content)
+        try:
+            parsed = json.loads(content)
+        except json.JSONDecodeError:
+            # If LLM returns invalid JSON, we degrade gracefully.
+            parsed = {
+                "grammatical": False,
+                "natural": False,
+                "suggestions": [content.strip()]
+            }
+
+        # Ensure required fields exist
         return {
-            "grammatical": True,
-            "natural": True,
-            "suggestions": [text, "this is just a test"]
+            "grammatical": bool(parsed.get("grammatical", False)),
+            "natural": bool(parsed.get("natural", False)),
+            "suggestions": list(parsed.get("suggestions", [])),
         }
